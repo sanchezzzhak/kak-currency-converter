@@ -11,7 +11,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "CurrencyConverter\\": "src/"
+            "kak\\CurrencyConverter\\": "src/"
         }
     },
     "authors": [
@@ -21,8 +21,7 @@
         }
     ],
     "require-dev": {
-        "ext-curl": "*",
-        "guzzlehttp/guzzle" : ">=5.3.x-dev"
+        "ext-curl": "*"
     },
     "suggest": {
         "ext-curl": "Using the rate provider for gettting the rate from yahoo using curl extension"
