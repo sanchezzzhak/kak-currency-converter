@@ -35,7 +35,7 @@ class Converter
         $cacheId = 'CurrencyConverter::'.$currencyTo.$currencyFrom;
         $isCache = $this->cache!==null;
 
-        if($isCache && !$rate = $this->cache->fetch($cacheId)){
+        if($isCache && $rate = $this->cache->fetch($cacheId)){
             return $rate * $amount;
         }
 
