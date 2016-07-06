@@ -1,0 +1,30 @@
+{
+    "name": "kak/currency-converter",
+    "description": "Currency Converter Class with features of caching and identifying currency from country Code",
+    "license": "MIT",
+    "keywords": [
+        "money",
+        "currency",
+        "currency-converter",
+        "converter",
+        "exchange-rates"
+    ],
+    "autoload": {
+        "psr-4": {
+            "CurrencyConverter\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "sanchezzzhak",
+            "email": "sanchezzzhak@ya.ru"
+        }
+    ],
+    "require-dev": {
+        "ext-curl": "*",
+        "guzzlehttp/guzzle" : ">=5.3.x-dev"
+    },
+    "suggest": {
+        "ext-curl": "Using the rate provider for gettting the rate from yahoo using curl extension"
+    }    
+}  
