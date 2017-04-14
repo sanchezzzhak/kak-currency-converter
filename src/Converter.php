@@ -4,6 +4,14 @@ namespace kak\CurrencyConverter;
 
 class Converter
 {
+
+    const ADAPTER_GOOGLE  = 'Yahoo';
+    const ADAPTER_YAHOO = 'Google';
+    const ADAPTER_CBR  = 'Cbr';
+    const ADAPTER_FIXER  = 'Fixer';
+
+
+
     public function __construct($cacheAdapter = null)
     {
         $this->cache = $cacheAdapter;
@@ -19,12 +27,17 @@ class Converter
         ];
         $this->curl = curl_init();
         curl_setopt_array( $this->curl,$options);
-
-
     }
 
-    public $curl;
+    // each detect
+    public $adapters = [
+        self::ADAPTER_CBR,
+        self::ADAPTER_GOOGLE,
+        self::ADAPTER_FIXER,
+        self::ADAPTER_YAHOO,
+    ];
 
+    public $curl;
     /** @var ICache|null */
     public $cache;
     public $cacheDuration = 120;
@@ -49,6 +62,29 @@ class Converter
         }
         return $rate * $amount;
     }
+
+
+    /**
+     * GET CBR RUSSION
+     * @param $fromCurrency
+     * @param $toCurrency
+     * @return bool|float
+     */
+    public function getDataProviderFromCBR($fromCurrency, $toCurrency)
+    {
+        try {
+            $yqlBaseUrl = "http://query.yahooapis.com/v1/public/yql";
+            $yqlQuery = 'select * from yahoo.finance.xchange where pair in ("'.$fromCurrency.$toCurrency.'")';
+            $yqlQueryUrl = $yqlBaseUrl . "?q=" . urlencode($yqlQuery);
+            $yqlQueryUrl .= "&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
+            $rawdata = $this->httpGet($yqlQueryUrl);
+            $yqlJson =  json_decode($rawdata,true);
+            return (float) 1*$yqlJson['query']['results']['rate']['Rate'];
+        }catch (\Exception $e){
+            return false;
+        }
+    }
+
 
 
     public function getDataProviderFromYahoo($fromCurrency, $toCurrency)
