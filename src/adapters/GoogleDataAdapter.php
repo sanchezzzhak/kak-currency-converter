@@ -12,6 +12,7 @@ namespace kak\CurrencyConverter\adapters;
 class GoogleDataAdapter implements IAdapter
 {
 
+    public $client;
 
 
 

@@ -2,11 +2,14 @@
 
 namespace kak\CurrencyConverter;
 
+use kak\CurrencyConverter\adapters\CbrDataAdapter;
+use kak\CurrencyConverter\adapters\GoogleDataAdapter;
+
 class Converter
 {
 
-    const ADAPTER_GOOGLE  = 'Yahoo';
-    const ADAPTER_YAHOO = 'Google';
+    const ADAPTER_GOOGLE  = 'Google';
+    const ADAPTER_YAHOO = 'Yahoo';
     const ADAPTER_CBR  = 'Cbr';
     const ADAPTER_FIXER  = 'Fixer';
 
@@ -15,32 +18,52 @@ class Converter
     public function __construct($cacheAdapter = null)
     {
         $this->cache = $cacheAdapter;
-
-        $options = [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_AUTOREFERER    => true,
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_TIMEOUT        => 10,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:5.0) Gecko/20110619 Firefox/5.0'
-        ];
-        $this->curl = curl_init();
-        curl_setopt_array( $this->curl,$options);
+        $this->httpClient = new http\httpClient;
     }
 
     // each detect
     public $adapters = [
         self::ADAPTER_CBR,
-        self::ADAPTER_GOOGLE,
-        self::ADAPTER_FIXER,
         self::ADAPTER_YAHOO,
+        //self::ADAPTER_FIXER,
+        //self::ADAPTER_GOOGLE
     ];
 
     public $curl;
     /** @var ICache|null */
     public $cache;
     public $cacheDuration = 120;
+
+    public $httpClient;
+
+
+    private function getRatesAll($base, $from = [] , $reverse = false)
+    {
+
+
+        foreach ($this->adapters as $adapterName){
+            $classPath = "\\kak\\CurrencyConverter\\adapters\\{$adapterName}DataAdapter";
+            var_dump($classPath);
+            /** @var  $adapter CbrDataAdapter|GoogleDataAdapter*/
+            $adapter = new $classPath([
+                'client' => $this->httpClient
+            ]);
+
+            var_dump($adapter->get($base,$from, $reverse));
+        }
+
+
+
+    }
+
+
+
+
+    public function getRates($base, $from = [], $reverse = false)
+    {
+        return $this->getRatesAll($base, $from, $reverse);
+
+    }
 
 
     public function get($currencyTo,$currencyFrom, $amount = 1)
@@ -123,16 +146,7 @@ class Converter
     }
 
 
-    public function httpGet($url)
-    {
-        curl_setopt($this->curl,CURLOPT_HTTPGET,true);
-        curl_setopt($this->curl,CURLOPT_URL,$url);
-        $c = curl_exec($this->curl);
-        if(!curl_errno($this->curl))
-            return $c;
 
-        throw new \Exception(curl_error($this->curl));
-    }
 
 
 

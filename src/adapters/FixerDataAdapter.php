@@ -9,7 +9,11 @@
 namespace kak\CurrencyConverter\adapters;
 
 
-class FixerDataAdapter
+class FixerDataAdapter implements IAdapter
 {
     public $url = 'http://api.fixer.io/latest?base=RUB&symbols=USD,GBP';
+
+    public $client;
+
+
 }
