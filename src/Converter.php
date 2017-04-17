@@ -12,9 +12,6 @@ class Converter
     const ADAPTER_YAHOO = 'Yahoo';
     const ADAPTER_CBR  = 'Cbr';
     const ADAPTER_FIXER  = 'Fixer';
-
-
-
     public function __construct($cacheAdapter = null)
     {
         $this->cache = $cacheAdapter;
@@ -23,10 +20,10 @@ class Converter
 
     // each detect
     public $adapters = [
-        self::ADAPTER_CBR,
-        self::ADAPTER_YAHOO,
+        //self::ADAPTER_CBR,
+        //self::ADAPTER_YAHOO,
         //self::ADAPTER_FIXER,
-        //self::ADAPTER_GOOGLE
+        self::ADAPTER_GOOGLE
     ];
 
     public $curl;
@@ -36,122 +33,93 @@ class Converter
 
     public $httpClient;
 
-
-    private function getRatesAll($base, $from = [] , $reverse = false)
+    private function getRatesDetectEach($base, $from = [], $reverse = false, $adapters = [])
     {
-
-
+        $data = [];
+        $originalFrom = $from;
+        $skip = count($adapters);
         foreach ($this->adapters as $adapterName){
-            $classPath = "\\kak\\CurrencyConverter\\adapters\\{$adapterName}DataAdapter";
-            var_dump($classPath);
-            /** @var  $adapter CbrDataAdapter|GoogleDataAdapter*/
-            $adapter = new $classPath([
-                'client' => $this->httpClient
-            ]);
+            if($skip && !in_array($adapterName,$adapters)){
+                continue;
+            }
+            if ($result = $this->getRatesByAdapter($adapterName,$base, $from, $reverse)) {
+                foreach($result as $code => $item){
+                    $data[$code] = $item;
+                }
 
-            var_dump($adapter->get($base,$from, $reverse));
+                if($originalFrom!== null){
+                    $from = array_diff($originalFrom,array_keys($data));
+                    if(!count($from)){
+                        break;
+                    }
+                }
+
+            }
         }
-
-
-
+        return $data;
     }
 
+    private function getRatesByAdapter($adapterName, $base, $from = [], $reverse = false){
 
-
-
-    public function getRates($base, $from = [], $reverse = false)
-    {
-        return $this->getRatesAll($base, $from, $reverse);
-
-    }
-
-
-    public function get($currencyTo,$currencyFrom, $amount = 1)
-    {
-        $cacheId = 'CurrencyConverter::'.$currencyTo.$currencyFrom;
-        $isCache = $this->cache!==null;
-
-        if($isCache && $rate = $this->cache->fetch($cacheId)){
-            return $rate * $amount;
-        }
-
-        if(!$rate = $this->getDataProviderFromYahoo($currencyTo,$currencyFrom)){
-            $rate = $this->getDataProviderFromGoogle($currencyTo,$currencyFrom);
-        }
-
-        if($isCache && $rate){
-            $this->cache->save($cacheId,$rate,$this->cacheDuration);
-
-        }
-        return $rate * $amount;
+        $classPath = "\\kak\\CurrencyConverter\\adapters\\{$adapterName}DataAdapter";
+        /** @var  $adapter CbrDataAdapter|GoogleDataAdapter*/
+        $adapter = new $classPath([
+            'client' => $this->httpClient
+        ]);
+        return $adapter->get($base, $from, $reverse);
     }
 
 
     /**
-     * GET CBR RUSSION
-     * @param $fromCurrency
-     * @param $toCurrency
-     * @return bool|float
+     * @param $base string RUB
+     * @param $from array [ 'KZT', 'IRR' ]
+     * @param bool|false $reverse Get how much currency in base currency
+     * @param array $adapters set custom a priority adapters
+     * @return array
      */
-    public function getDataProviderFromCBR($fromCurrency, $toCurrency)
-    {
-        try {
-            $yqlBaseUrl = "http://query.yahooapis.com/v1/public/yql";
-            $yqlQuery = 'select * from yahoo.finance.xchange where pair in ("'.$fromCurrency.$toCurrency.'")';
-            $yqlQueryUrl = $yqlBaseUrl . "?q=" . urlencode($yqlQuery);
-            $yqlQueryUrl .= "&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
-            $rawdata = $this->httpGet($yqlQueryUrl);
-            $yqlJson =  json_decode($rawdata,true);
-            return (float) 1*$yqlJson['query']['results']['rate']['Rate'];
-        }catch (\Exception $e){
-            return false;
-        }
+    public function getRates($base, $from, $reverse = false , $adapters = []){
+        return $this->getRatesDetectEach($base, $from, $reverse, $adapters);
     }
 
 
-
-    public function getDataProviderFromYahoo($fromCurrency, $toCurrency)
+    /**
+     * @param $base
+     * @param $from
+     * @param int $amount
+     * @param bool|false $reverse
+     * @param array $adapters
+     * @return array|bool|int
+     */
+    public function get($base, $from, $amount = 1, $reverse = false , $adapters = [])
     {
-        try {
-            $yqlBaseUrl = "http://query.yahooapis.com/v1/public/yql";
-            $yqlQuery = 'select * from yahoo.finance.xchange where pair in ("'.$fromCurrency.$toCurrency.'")';
-            $yqlQueryUrl = $yqlBaseUrl . "?q=" . urlencode($yqlQuery);
-            $yqlQueryUrl .= "&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
-            $rawdata = $this->httpGet($yqlQueryUrl);
-            $yqlJson =  json_decode($rawdata,true);
-            return (float) 1*$yqlJson['query']['results']['rate']['Rate'];
-        }catch (\Exception $e){
-            return false;
+        $cacheId = 'CurrencyConverter::'. md5( $base . '>' . ( is_array($from) ? implode(',',$from) : $from));
+        $isCache = $this->cache!==null;
+        if($isCache && $rate = $this->cache->fetch($cacheId)) {
+            return $rate;
         }
-    }
+        $from = is_string($from) && $from !== null ? [ $from ] : $from;
 
-    public function getDataProviderFromGoogle($fromCurrency, $toCurrency)
-    {
-        try {
-            $url = 'https://www.google.com/finance/converter?a=1&from=[fromCurrency]&to=[toCurrency]';
-            $fromCurrency = urlencode($fromCurrency);
-            $toCurrency = urlencode($toCurrency);
+        if($result = $this->getRatesDetectEach($base, $from, $reverse, $adapters)){
+            $data = [];
 
-            $url = strtr($url,[
-                '[fromCurrency]' => $fromCurrency,
-                '[toCurrency]'=> $toCurrency,
-            ]);
-            $rawdata = $this->httpGet($url);
-            $rawdata = explode("<span class=bld>",$rawdata);
-            $rawdata = explode("</span>",$rawdata[1]);
-            return preg_replace('/[^0-9\.]/i', null, $rawdata[0]);
-        }catch (\Exception $e){
-            return false;
+            if(count($result) > 1){
+                foreach($result as $code => $item){
+                    $data[$code] = $amount * $item['value'];
+                }
+                if($isCache && count($data)){
+                    $this->cache->save($cacheId,$data,$this->cacheDuration);
+                }
+                return $data;
+            }
+
+            $data = isset($result[$from[0]]) ? ($amount * $result[$from[0]]['value']) : false;
+            if($isCache && $data){
+                $this->cache->save($cacheId,$data,$this->cacheDuration);
+            }
+            return $data;
         }
+
+        return false;
     }
-
-
-
-
-
-
-
-
-
 
 }

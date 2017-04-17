@@ -10,11 +10,10 @@ namespace kak\CurrencyConverter\adapters;
 
 class YahooDataAdapter extends BaseDataAdapter
 {
-    public $client;
+    public $provider = 'Yahoo';
 
     public function get( $base, $from = [] , $reverse = false)
     {
-
         if(!count($from)) {
             return false;
         }

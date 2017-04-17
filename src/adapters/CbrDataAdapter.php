@@ -10,6 +10,9 @@ namespace kak\CurrencyConverter\adapters;
 
 class CbrDataAdapter extends BaseDataAdapter
 {
+    public $provider = 'Cbr';
+    
+
     public function get($base, $from = [], $reverse = false)
     {
         if($base !='RUB' ){
@@ -44,7 +47,7 @@ class CbrDataAdapter extends BaseDataAdapter
                 $exchange = 1 / $exchange;
             }
 
-            $exchange = $this->correction($exchange, 0);
+            $exchange = round($this->correction($exchange, 0),5);
             $result[$code] = $this->formatResult($code, $par, $exchange);
         }
 

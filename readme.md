@@ -14,8 +14,23 @@ echo $converter->get('USD', 'RUB');
 // caching currency
 $cache = new app\helpers\CacheAdapter\Cache;
 $converter = new kak\CurrencyConverter\Converter($cacheAdapter);
-echo $converter->get('USD', 'RUB'); 
+
+echo "result 1 usd in RUB  \n";
+echo $converter->get('USD', 'RUB' , 1 , false ,[$converter::ADAPTER_YAHOO ]);
+echo "result 2 RUB in USD  \n";
+echo $converter->get('USD', 'RUB' , 2 , true ,[ $converter::ADAPTER_YAHOO ]);
+
+// get all rates by RUB
+// result array
+echo $converter->getRates('RUB', null, false ,[ $converter::ADAPTER_YAHOO ]);
+
+
+
 ```
+
+
+
+
 
 ## CacheAdapter from Yii2
 ```php

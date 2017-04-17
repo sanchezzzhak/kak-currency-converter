@@ -9,6 +9,7 @@ class BaseDataAdapter implements IAdapter
      * @var \kak\CurrencyConverter\http\HttpClient;
      */
     public $client;
+    public $provider = '';
 
     public function __construct($config = [])
     {
@@ -39,6 +40,7 @@ class BaseDataAdapter implements IAdapter
         return [
             'currency' => $code,
             'nominal' => $nominal,
+            'provider' => $this->provider,
             'value' => $value
         ];
     }
