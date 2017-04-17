@@ -19,7 +19,7 @@ class Converter
     public function __construct($cacheAdapter = null)
     {
         $this->cache = $cacheAdapter;
-        $this->httpClient = new http\httpClient;
+        $this->httpClient = new http\HttpClient;
     }
 
     // each detect
