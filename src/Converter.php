@@ -5,13 +5,17 @@ namespace kak\CurrencyConverter;
 use kak\CurrencyConverter\adapters\CbrDataAdapter;
 use kak\CurrencyConverter\adapters\GoogleDataAdapter;
 
+/**
+ * Class Converter
+ * @package kak\CurrencyConverter
+ */
 class Converter
 {
-
     const ADAPTER_GOOGLE  = 'Google';
     const ADAPTER_YAHOO = 'Yahoo';
     const ADAPTER_CBR  = 'Cbr';
     const ADAPTER_FIXER  = 'Fixer';
+
     public function __construct($cacheAdapter = null)
     {
         $this->cache = $cacheAdapter;
@@ -20,10 +24,10 @@ class Converter
 
     // each detect
     public $adapters = [
-        //self::ADAPTER_CBR,
-        //self::ADAPTER_YAHOO,
-        //self::ADAPTER_FIXER,
-        self::ADAPTER_GOOGLE
+        self::ADAPTER_CBR,
+        self::ADAPTER_YAHOO,
+        self::ADAPTER_FIXER,
+        //self::ADAPTER_GOOGLE
     ];
 
     public $curl;
