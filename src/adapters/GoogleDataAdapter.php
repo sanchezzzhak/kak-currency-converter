@@ -38,7 +38,7 @@ class GoogleDataAdapter extends BaseDataAdapter
     public function parser($base, $from )
     {
         try {
-            $url = 'https://www.google.com/finance/converter?a=1&from=[fromCurrency]&to=[toCurrency]';
+            $url = 'https://finance.google.com/finance/converter?a=1&from=[fromCurrency]&to=[toCurrency]';
             $fromCurrency = urlencode($base);
             $toCurrency = urlencode($from);
             $url = strtr($url,[

@@ -11,10 +11,10 @@ use kak\CurrencyConverter\adapters\GoogleDataAdapter;
  */
 class Converter
 {
-    const ADAPTER_GOOGLE  = 'Google';
+    const ADAPTER_GOOGLE = 'Google';
     const ADAPTER_YAHOO = 'Yahoo';
-    const ADAPTER_CBR  = 'Cbr';
-    const ADAPTER_FIXER  = 'Fixer';
+    const ADAPTER_CBR = 'Cbr';
+    const ADAPTER_FIXER = 'Fixer';
 
     public function __construct($cacheAdapter = null)
     {
@@ -26,8 +26,8 @@ class Converter
     public $adapters = [
         self::ADAPTER_CBR,
         self::ADAPTER_YAHOO,
+        self::ADAPTER_GOOGLE,
         self::ADAPTER_FIXER,
-        //self::ADAPTER_GOOGLE
     ];
 
     public $curl;
@@ -96,29 +96,29 @@ class Converter
      */
     public function get($base, $from, $amount = 1, $reverse = false , $adapters = [])
     {
-        $cacheId = 'CurrencyConverter::'. md5( $base . '>' . ( is_array($from) ? implode(',',$from) : $from));
-        $isCache = $this->cache!==null;
-        if($isCache && $rate = $this->cache->fetch($cacheId)) {
+        $cacheId = 'CurrencyConverter::' . md5($base . '>' . (is_array($from) ? implode(',', $from) : $from));
+        $isCache = $this->cache !== null;
+        if ($isCache && $rate = $this->cache->fetch($cacheId)) {
             return $rate;
         }
-        $from = is_string($from) && $from !== null ? [ $from ] : $from;
+        $from = is_string($from) && $from !== null ? [$from] : $from;
 
-        if($result = $this->getRatesDetectEach($base, $from, $reverse, $adapters)){
+        if ($result = $this->getRatesDetectEach($base, $from, $reverse, $adapters)) {
             $data = [];
 
-            if(count($result) > 1){
-                foreach($result as $code => $item){
+            if (count($result) > 1) {
+                foreach ($result as $code => $item) {
                     $data[$code] = $amount * $item['value'];
                 }
-                if($isCache && count($data)){
-                    $this->cache->save($cacheId,$data,$this->cacheDuration);
+                if ($isCache && count($data)) {
+                    $this->cache->save($cacheId, $data, $this->cacheDuration);
                 }
                 return $data;
             }
 
             $data = isset($result[$from[0]]) ? ($amount * $result[$from[0]]['value']) : false;
-            if($isCache && $data){
-                $this->cache->save($cacheId,$data,$this->cacheDuration);
+            if ($isCache && $data) {
+                $this->cache->save($cacheId, $data, $this->cacheDuration);
             }
             return $data;
         }
