@@ -39,16 +39,17 @@ class GoogleDataAdapter extends BaseDataAdapter
     {
         try {
             $url = 'https://finance.google.com/finance/converter?a=1&from=[fromCurrency]&to=[toCurrency]';
-            $fromCurrency = urlencode($base);
-            $toCurrency = urlencode($from);
+            $base = urlencode($base);
+            $from = urlencode($from);
             $url = strtr($url,[
-                '[fromCurrency]' => $fromCurrency,
-                '[toCurrency]'=> $toCurrency,
+                '[fromCurrency]' => $from,
+                '[toCurrency]'=> $base,
             ]);
             $rawdata = $this->client->get($url);
             $rawdata = explode("<span class=bld>",$rawdata);
             $rawdata = explode("</span>",$rawdata[1]);
             return preg_replace('/[^0-9\.]/i', null, $rawdata[0]);
+
         }catch (\Exception $e){}
         return false;
     }

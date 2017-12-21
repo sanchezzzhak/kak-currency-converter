@@ -25,7 +25,7 @@ class Converter
     // each detect
     public $adapters = [
         self::ADAPTER_CBR,
-        self::ADAPTER_YAHOO,
+       // self::ADAPTER_YAHOO,
         self::ADAPTER_GOOGLE,
         self::ADAPTER_FIXER,
     ];
