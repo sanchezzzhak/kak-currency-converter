@@ -45,6 +45,23 @@ class BaseDataAdapter implements IAdapter
         ];
     }
 
+    /**
+     * @param $url
+     * @param array $data
+     * @return string
+     */
+    public function buildUrl($url, $data = array()){
+        $parsed = parse_url($url);
+        isset($parsed['query']) ? parse_str($parsed['query'], $parsed['query']) : $parsed['query'] = [];
+        $params = isset($parsed['query']) ? array_merge($parsed['query'], $data) : $data;
+        $parsed['query'] = ($params) ? '?' . http_build_query($params) : '';
+        if (!isset($parsed['path']))
+            $parsed['path'] = '/';
+
+        $scheme = isset($parsed['scheme']) ? $parsed['scheme']: 'http';
+        $host   = isset($parsed['host']) ? $scheme. '://' . $parsed['host'] . (!empty($parsed['port']) ? ':'.$parsed['port']:'') : '';
+        return  $host . $parsed['path'] . $parsed['query'];
+    }
 
 
 }

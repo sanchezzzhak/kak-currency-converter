@@ -15,20 +15,34 @@ class Converter
     const ADAPTER_YAHOO = 'Yahoo';
     const ADAPTER_CBR = 'Cbr';
     const ADAPTER_FIXER = 'Fixer';
+    //const ADAPTER_FORGE = 'Forge';
+    const ADAPTER_FREE_CURRENCY = 'FreeCurrency';
 
-    public function __construct($cacheAdapter = null)
+    /**
+     * Converter constructor.
+     * @param null $cacheAdapter
+     * @param array $adaptersConfig
+     */
+    public function __construct($cacheAdapter = null, $adaptersConfig = [])
     {
         $this->cache = $cacheAdapter;
+        $this->adaptersConfig = $adaptersConfig;
         $this->httpClient = new http\HttpClient;
     }
 
     // each detect
     public $adapters = [
         self::ADAPTER_CBR,
+        self::ADAPTER_FREE_CURRENCY,
+       // self::ADAPTER_FORGE,
        // self::ADAPTER_YAHOO,
-        self::ADAPTER_GOOGLE,
-        self::ADAPTER_FIXER,
+       // self::ADAPTER_GOOGLE,
+       // self::ADAPTER_FIXER,
     ];
+
+    // config adapters
+    public $adaptersConfig = [];
+
 
     public $curl;
     /** @var ICache|null */
@@ -46,7 +60,7 @@ class Converter
             if($skip && !in_array($adapterName,$adapters)){
                 continue;
             }
-            if ($result = $this->getRatesByAdapter($adapterName,$base, $from, $reverse)) {
+            if ($result = $this->getRatesByAdapter($adapterName, $base, $from, $reverse)) {
                 foreach($result as $code => $item){
                     $data[$code] = $item;
                 }
@@ -70,6 +84,19 @@ class Converter
         $adapter = new $classPath([
             'client' => $this->httpClient
         ]);
+
+        $adapterOptions = isset($this->adaptersConfig[$adapterName]) ? $this->adaptersConfig[$adapterName] : [];
+        foreach ($adapterOptions as $key => $option){
+            if (property_exists($adapter, $key)) {
+                $adapter->{$key} = $option;
+            }else{
+                throw new \InvalidArgumentException(
+                    sprintf('Adapter "%s" unknown set property "%s"', $adapterName, $key)
+                );
+            }
+        }
+
+
         return $adapter->get($base, $from, $reverse);
     }
 

@@ -9,8 +9,11 @@
 namespace kak\CurrencyConverter\adapters;
 
 
-
-
+/**
+ * Class GoogleDataAdapter
+ * @package kak\CurrencyConverter\adapters
+ * @deprecated NOT USE NOT WORK PARSE ( NEW PARSER IN PROCESS )
+ */
 class GoogleDataAdapter extends BaseDataAdapter
 {
     public $provider = 'google';

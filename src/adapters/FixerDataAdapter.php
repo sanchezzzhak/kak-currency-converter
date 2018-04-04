@@ -12,18 +12,28 @@ class FixerDataAdapter extends BaseDataAdapter
 {
     public $provider = 'fixer';
 
+    public $apiKey = '';
+    public $apiUrl = 'http://data.fixer.io/api/latest';
+
     public function get($base, $from = [], $reverse = false)
     {
-        $url = 'http://api.fixer.io/latest?base=' . $base;
+        $url = $this->buildUrl($this->apiUrl, [
+            'base' => $base,
+            'access_key' => $this->apiKey,
+            'symbols' => implode(',',$from)
+        ]);
         try {
-            $jsonData = json_decode($this->client->get($url),true);
+            $data = $this->client->get($url);
+            $jsonData = json_decode($data ,true);
         } catch (\Exception  $e) {
             return false;
         }
         $result = [];
 
         $skip = is_array($from) && count($from) > 0 ;
-        foreach($jsonData['rates'] as $code => $rate){
+        $rates = isset($jsonData['rates']) ? $jsonData['rates'] : [];
+
+        foreach($rates as $code => $rate){
             if($skip && !in_array($code,$from)){
                 continue;
             }
@@ -33,11 +43,9 @@ class FixerDataAdapter extends BaseDataAdapter
             if($reverse === true){
                 $exchange = 1 / $exchange;
             }
-            $result[$code] = $this->formatResult($code,1,$exchange);
+            $result[$code] = $this->formatResult($code, 1, $exchange);
         }
         return $result;
     }
-
-
 
 }

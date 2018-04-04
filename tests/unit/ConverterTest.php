@@ -22,16 +22,25 @@ class ConverterTest extends \Codeception\Test\Unit
     {
         $converter = new \kak\CurrencyConverter\Converter(null);
 
-        $rates = [
-            'AZNUSD' => $converter->get('USD', 'AZN'),
-            'AZNEUR' => $converter->get('EUR', 'AZN'),
-            'AZNRUB' => $converter->get('RUB', 'AZN'),
 
-            'KZTUSD' => $converter->get('USD', 'KZT'),
-            'KZTEUR' => $converter->get('EUR', 'KZT'),
-            'KZTRUB' => $converter->get('RUB', 'KZT'),
+        $from =  [
+            'USD' => 5,
+            'EUR' => 5,
+            'AZN' => 0,
+            'KZT' => 0,
+            'UAH' => 5,
+            'BYN' => 5,
+            'INR' => 5,
+            'PLN' => 5,
+            'IRR' => 3,
+            'TRY' => 5,
+            'MDL' => 5,
+            'UZS' => 0
         ];
 
-        var_dump($rates);
+
+
+
+        var_dump($converter->get('RUB', array_keys($from)));
     }
 }

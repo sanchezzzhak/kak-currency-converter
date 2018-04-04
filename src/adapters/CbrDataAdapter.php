@@ -11,17 +11,19 @@ namespace kak\CurrencyConverter\adapters;
 class CbrDataAdapter extends BaseDataAdapter
 {
     public $provider = 'Cbr';
-    
+
+    public $apiUrl = 'http://www.cbr.ru/scripts/XML_daily.asp';
 
     public function get($base, $from = [], $reverse = false)
     {
         if($base !='RUB' ){
             return false;
         }
-
         try {
-            $date =  date('d.m.Y', time() + 86400);
-            $currencyXml = $this->client->get('http://www.cbr.ru/scripts/XML_daily.asp?date_req=' . $date);
+            $url = $this->buildUrl($this->apiUrl, [
+                'date_req' => date('d.m.Y', time() + 86400)
+            ]);
+            $currencyXml = $this->client->get($url);
         } catch(\Exception $e){
             return false;
         }
