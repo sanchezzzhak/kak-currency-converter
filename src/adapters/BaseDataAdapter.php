@@ -10,6 +10,7 @@ class BaseDataAdapter implements IAdapter
      */
     public $client;
     public $provider = '';
+    public $debug = false;
 
     public function __construct($config = [])
     {

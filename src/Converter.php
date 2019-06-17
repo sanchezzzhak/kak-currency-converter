@@ -34,10 +34,10 @@ class Converter
     public $adapters = [
         self::ADAPTER_CBR,
         self::ADAPTER_FREE_CURRENCY,
-       // self::ADAPTER_FORGE,
-       // self::ADAPTER_YAHOO,
-       // self::ADAPTER_GOOGLE,
-       // self::ADAPTER_FIXER,
+        // self::ADAPTER_FORGE,
+        // self::ADAPTER_YAHOO,
+        // self::ADAPTER_GOOGLE,
+        self::ADAPTER_FIXER,
     ];
 
     // config adapters
@@ -50,24 +50,27 @@ class Converter
     public $cacheDuration = 120;
 
     public $httpClient;
+    public $debug = false;
+
+
 
     private function getRatesDetectEach($base, $from = [], $reverse = false, $adapters = [])
     {
         $data = [];
         $originalFrom = $from;
         $skip = count($adapters);
-        foreach ($this->adapters as $adapterName){
-            if($skip && !in_array($adapterName,$adapters)){
+        foreach ($this->adapters as $adapterName) {
+            if ($skip && !in_array($adapterName, $adapters)) {
                 continue;
             }
             if ($result = $this->getRatesByAdapter($adapterName, $base, $from, $reverse)) {
-                foreach($result as $code => $item){
+                foreach ($result as $code => $item) {
                     $data[$code] = $item;
                 }
 
-                if($originalFrom!== null){
-                    $from = array_diff($originalFrom,array_keys($data));
-                    if(!count($from)){
+                if ($originalFrom !== null) {
+                    $from = array_diff($originalFrom, array_keys($data));
+                    if (!count($from)) {
                         break;
                     }
                 }
@@ -77,19 +80,21 @@ class Converter
         return $data;
     }
 
-    private function getRatesByAdapter($adapterName, $base, $from = [], $reverse = false){
+    private function getRatesByAdapter($adapterName, $base, $from = [], $reverse = false)
+    {
 
         $classPath = "\\kak\\CurrencyConverter\\adapters\\{$adapterName}DataAdapter";
-        /** @var  $adapter CbrDataAdapter|GoogleDataAdapter*/
+        /** @var  $adapter CbrDataAdapter|GoogleDataAdapter */
         $adapter = new $classPath([
-            'client' => $this->httpClient
+            'client' => $this->httpClient,
+            'debug' => $this->debug
         ]);
 
         $adapterOptions = isset($this->adaptersConfig[$adapterName]) ? $this->adaptersConfig[$adapterName] : [];
-        foreach ($adapterOptions as $key => $option){
+        foreach ($adapterOptions as $key => $option) {
             if (property_exists($adapter, $key)) {
                 $adapter->{$key} = $option;
-            }else{
+            } else {
                 throw new \InvalidArgumentException(
                     sprintf('Adapter "%s" unknown set property "%s"', $adapterName, $key)
                 );
@@ -108,7 +113,8 @@ class Converter
      * @param array $adapters set custom a priority adapters
      * @return array
      */
-    public function getRates($base, $from, $reverse = false , $adapters = []){
+    public function getRates($base, $from, $reverse = false, $adapters = [])
+    {
         return $this->getRatesDetectEach($base, $from, $reverse, $adapters);
     }
 
@@ -121,7 +127,7 @@ class Converter
      * @param array $adapters
      * @return array|bool|int
      */
-    public function get($base, $from, $amount = 1, $reverse = false , $adapters = [])
+    public function get($base, $from, $amount = 1, $reverse = false, $adapters = [])
     {
         $cacheId = 'CurrencyConverter::' . md5($base . '>' . (is_array($from) ? implode(',', $from) : $from));
         $isCache = $this->cache !== null;
