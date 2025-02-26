@@ -45,5 +45,8 @@ class YahooDataAdapter extends BaseDataAdapter
     }
 
 
-
+    public function validateConfig(): bool
+    {
+        return true;
+    }
 }

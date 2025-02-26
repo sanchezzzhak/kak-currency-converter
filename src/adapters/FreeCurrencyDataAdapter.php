@@ -11,13 +11,15 @@ namespace kak\CurrencyConverter\adapters;
  * https://free.currencyconverterapi.com/api/v5/convert?q=USD_PHP,PHP_USD&compact=ultra
  * free per 2 request in 1 ses;
  *
+ * update its free use - deprecate
+ *
  */
 class FreeCurrencyDataAdapter extends BaseDataAdapter
 {
     public $provider = 'FreeCurrency';
 
     public $apiUrl = 'https://free.currconv.com/api/v7/convert';
-    public $apiKey;
+    public $apiKey = '';
     public $chunkSize = 4;
 
     private function getApiData($base, $from)
@@ -87,4 +89,8 @@ class FreeCurrencyDataAdapter extends BaseDataAdapter
     }
 
 
+    public function validateConfig(): bool
+    {
+        return $this->apiKey !== '';
+    }
 }

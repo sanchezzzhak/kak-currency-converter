@@ -3,6 +3,7 @@
 namespace kak\CurrencyConverter;
 
 use kak\CurrencyConverter\adapters\CbrDataAdapter;
+use kak\CurrencyConverter\adapters\FreeCurrencyDataAdapter;
 use kak\CurrencyConverter\adapters\GoogleDataAdapter;
 
 /**
@@ -11,19 +12,18 @@ use kak\CurrencyConverter\adapters\GoogleDataAdapter;
  */
 class Converter
 {
-    const ADAPTER_GOOGLE = 'Google';
-    const ADAPTER_YAHOO = 'Yahoo';
-    const ADAPTER_CBR = 'Cbr';
-    const ADAPTER_FIXER = 'Fixer';
-    //const ADAPTER_FORGE = 'Forge';
-    const ADAPTER_FREE_CURRENCY = 'FreeCurrency';
+    public const ADAPTER_YAHOO = 'Yahoo';
+    public const ADAPTER_CBR = 'Cbr';
+    public const ADAPTER_FIXER = 'Fixer';
+    public const ADAPTER_FREE_CURRENCY = 'FreeCurrency';
+    public const ADAPTER_OPEN_EXCHANGE_RATES = 'OpenExchangeRates';
 
     /**
      * Converter constructor.
      * @param null $cacheAdapter
      * @param array $adaptersConfig
      */
-    public function __construct($cacheAdapter = null, $adaptersConfig = [])
+    public function __construct($cacheAdapter = null, array $adaptersConfig = [])
     {
         $this->cache = $cacheAdapter;
         $this->adaptersConfig = $adaptersConfig;
@@ -31,36 +31,41 @@ class Converter
     }
 
     // each detect
-    public $adapters = [
+    public array $adapters = [
         self::ADAPTER_CBR,
-        self::ADAPTER_FREE_CURRENCY,
+        // self::ADAPTER_FREE_CURRENCY,
         // self::ADAPTER_FORGE,
         // self::ADAPTER_YAHOO,
-        // self::ADAPTER_GOOGLE,
         self::ADAPTER_FIXER,
+        self::ADAPTER_OPEN_EXCHANGE_RATES,
     ];
 
     // config adapters
-    public $adaptersConfig = [];
+    public array $adaptersConfig = [];
+    public ?ICache $cache;
+    public int $cacheDuration = 120;
+    public http\HttpClient $httpClient;
+    public bool $debug = false;
 
-
-    public $curl;
-    /** @var ICache|null */
-    public $cache;
-    public $cacheDuration = 120;
-
-    public $httpClient;
-    public $debug = false;
-
-
-
-    private function getRatesDetectEach($base, $from = [], $reverse = false, $adapters = [])
+    /**
+     * @param string $base
+     * @param array $from
+     * @param bool $reverse
+     * @param array $priorityAdapters
+     * @return array
+     */
+    private function getRatesDetectEach(
+        string $base,
+        array $from = [],
+        bool $reverse = false,
+        array $priorityAdapters = []
+    ): array
     {
         $data = [];
         $originalFrom = $from;
-        $skip = count($adapters);
+        $skip = count($priorityAdapters);
         foreach ($this->adapters as $adapterName) {
-            if ($skip && !in_array($adapterName, $adapters)) {
+            if ($skip && !in_array($adapterName, $priorityAdapters)) {
                 continue;
             }
             if ($result = $this->getRatesByAdapter($adapterName, $base, $from, $reverse)) {
@@ -77,20 +82,27 @@ class Converter
 
             }
         }
+
         return $data;
     }
 
-    private function getRatesByAdapter($adapterName, $base, $from = [], $reverse = false)
+    /**
+     * @param string $adapterName
+     * @param string $base
+     * @param array $from
+     * @param bool $reverse
+     * @return array|false
+     */
+    private function getRatesByAdapter(string $adapterName, string $base, array $from = [], bool $reverse = false)
     {
-
         $classPath = "\\kak\\CurrencyConverter\\adapters\\{$adapterName}DataAdapter";
-        /** @var  $adapter CbrDataAdapter|GoogleDataAdapter */
+        /** @var $adapter CbrDataAdapter|FreeCurrencyDataAdapter */
         $adapter = new $classPath([
             'client' => $this->httpClient,
             'debug' => $this->debug
         ]);
 
-        $adapterOptions = isset($this->adaptersConfig[$adapterName]) ? $this->adaptersConfig[$adapterName] : [];
+        $adapterOptions = $this->adaptersConfig[$adapterName] ?? [];
         foreach ($adapterOptions as $key => $option) {
             if (property_exists($adapter, $key)) {
                 $adapter->{$key} = $option;
@@ -101,6 +113,10 @@ class Converter
             }
         }
 
+        if (!$adapter->validateConfig()) {
+            dd($adapter);
+            return false;
+        }
 
         return $adapter->get($base, $from, $reverse);
     }
@@ -109,48 +125,44 @@ class Converter
     /**
      * @param $base string RUB
      * @param $from array [ 'KZT', 'IRR' ]
-     * @param bool|false $reverse Get how much currency in base currency
-     * @param array $adapters set custom a priority adapters
+     * @param bool $reverse Get how much currency in base currency
+     * @param array $priorityAdapters use only adapters
      * @return array
      */
-    public function getRates($base, $from, $reverse = false, $adapters = [])
+    public function getRates(string $base, array $from, bool $reverse = false, array $priorityAdapters = []): array
     {
-        return $this->getRatesDetectEach($base, $from, $reverse, $adapters);
+        return $this->getRatesDetectEach($base, $from, $reverse, $priorityAdapters);
     }
 
 
     /**
-     * @param $base
-     * @param $from
+     * @param string $base
+     * @param array $from
      * @param int $amount
      * @param bool|false $reverse
-     * @param array $adapters
-     * @return array|bool|int
+     * @param array $priorityAdapters
+     * @return array|bool
      */
-    public function get($base, $from, $amount = 1, $reverse = false, $adapters = [])
+    public function get(
+        string $base,
+        array $from,
+        int $amount = 1,
+        bool $reverse = false,
+        array $priorityAdapters = []
+    )
     {
-        $cacheId = 'CurrencyConverter::' . md5($base . '>' . (is_array($from) ? implode(',', $from) : $from));
+        $cacheId = 'CurrencyConverter::' . md5($base . '>' . implode(',', $from));
         $isCache = $this->cache !== null;
         if ($isCache && $rate = $this->cache->fetch($cacheId)) {
             return $rate;
         }
-        $from = is_string($from) && $from !== null ? [$from] : $from;
 
-        if ($result = $this->getRatesDetectEach($base, $from, $reverse, $adapters)) {
+        if ($result = $this->getRatesDetectEach($base, $from, $reverse, $priorityAdapters)) {
             $data = [];
-
-            if (count($result) > 1) {
-                foreach ($result as $code => $item) {
-                    $data[$code] = $amount * $item['value'];
-                }
-                if ($isCache && count($data)) {
-                    $this->cache->save($cacheId, $data, $this->cacheDuration);
-                }
-                return $data;
+            foreach ($result as $code => $item) {
+                $data[$code] = $amount * $item['value'];
             }
-
-            $data = isset($result[$from[0]]) ? ($amount * $result[$from[0]]['value']) : false;
-            if ($isCache && $data) {
+            if ($isCache && count($data)) {
                 $this->cache->save($cacheId, $data, $this->cacheDuration);
             }
             return $data;

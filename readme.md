@@ -8,29 +8,29 @@ Exchange rates/Currency Converter Library with features of caching and identifyi
 <?php
 require 'vendor/autoload.php';
 
-$converter = new kak\CurrencyConverter\Converter;
-echo $converter->get('USD', 'RUB');
+use kak\CurrencyConverter\Converter;
+
+$converter = new Converter;
+
+var_dump($converter->get('USD', ['RUB', 'KZT']));
 
 // caching currency
-$cache = new app\helpers\CacheAdapter\Cache;
-$converter = new kak\CurrencyConverter\Converter($cacheAdapter);
+$cache = new Cache;
+$converter = new Converter($cacheAdapter, [
+  Converter::ADAPTER_OPEN_EXCHANGE_RATES => [
+      'apiKey' => $_ENV['OPEN_EXCHANGE_RATES_KEY'] ?? '',
+  ]
+]);
 
-echo "result 1 usd in RUB  \n";
-echo $converter->get('USD', 'RUB' , 1 , false ,[$converter::ADAPTER_YAHOO ]);
+
+
+echo "result 1 USD in RUB  \n";
+var_dump($converter->get('USD', ['RUB'], 1, false, [Converter::ADAPTER_OPEN_EXCHANGE_RATES ]));
 echo "result 2 RUB in USD  \n";
-echo $converter->get('USD', 'RUB' , 2 , true ,[ $converter::ADAPTER_YAHOO ]);
-
-// get all rates by RUB
-// result array
-echo $converter->getRates('RUB', null, false ,[ $converter::ADAPTER_YAHOO ]);
-
-
+var_dump($converter->get('RUB', ['USD'], 2 , true, [Converter::ADAPTER_OPEN_EXCHANGE_RATES]));
+var_dump($converter->getRates('RUB', [], false, [Converter::ADAPTER_OPEN_EXCHANGE_RATES]));
 
 ```
-
-
-
-
 
 ## CacheAdapter from Yii2
 ```php
@@ -69,10 +69,9 @@ class Cache Extends Object implements \kak\CurrencyConverter\ICache
 ```
 
 ## Requirements
-* PHP version 5.4 or later
+* PHP version 7.4 or later
 * Curl Extension
 
 ## Installation
-This library depends on composer for installation . For installation of composer, please visit [getcomposer.org](//getcomposer.org). 
-
+This library depends on composer for installation . For installation of composer, please visit [getcomposer.org](//getcomposer.org).
 Add `"kak/currency-converter":"dev-master` to your composer.json and run `php composer.phar update`

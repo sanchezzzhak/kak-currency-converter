@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: kak
- * Date: 14.04.2017
- * Time: 19:09
- */
 
 namespace kak\CurrencyConverter\adapters;
 
@@ -48,4 +42,8 @@ class FixerDataAdapter extends BaseDataAdapter
         return $result;
     }
 
+    public function validateConfig(): bool
+    {
+        return $this->apiKey !== '';
+    }
 }

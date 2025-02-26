@@ -1,9 +1,9 @@
 <?php
+
 namespace kak\CurrencyConverter\adapters;
 
 
-
-class BaseDataAdapter implements IAdapter
+abstract class BaseDataAdapter implements IAdapter
 {
     /**
      * @var \kak\CurrencyConverter\http\HttpClient;
@@ -12,29 +12,22 @@ class BaseDataAdapter implements IAdapter
     public $provider = '';
     public $debug = false;
 
-    public function __construct($config = [])
+    public function __construct(array $config = [])
     {
         foreach ($config as $key => $item) {
             $this->{$key} = $item;
         }
     }
 
-    protected function strToFloat($str){
-
-        return strpos($str, ',') !== false ? str_replace(',', '.', $str) : $str;
-    }
-
-    public function get($base, $from = [], $reverse = false)
+    protected function asToFloat(string $str): float
     {
-        // TODO: Implement get() method.
+        return (float)(strpos($str, ',') !== false ? str_replace(',', '.', $str) : $str);
     }
-
 
     public function correction($exch, $percent = 0)
     {
-        return ($exch-($percent / 100 * $exch));
+        return ($exch - ($percent / 100 * $exch));
     }
-
 
     public function formatResult($code, $nominal, $value)
     {
@@ -47,11 +40,12 @@ class BaseDataAdapter implements IAdapter
     }
 
     /**
-     * @param $url
+     * @param string $url
      * @param array $data
      * @return string
      */
-    public function buildUrl($url, $data = array()){
+    public function buildUrl(string $url, array $data = []): string
+    {
         $parsed = parse_url($url);
         isset($parsed['query']) ? parse_str($parsed['query'], $parsed['query']) : $parsed['query'] = [];
         $params = isset($parsed['query']) ? array_merge($parsed['query'], $data) : $data;
@@ -59,9 +53,9 @@ class BaseDataAdapter implements IAdapter
         if (!isset($parsed['path']))
             $parsed['path'] = '/';
 
-        $scheme = isset($parsed['scheme']) ? $parsed['scheme']: 'http';
-        $host   = isset($parsed['host']) ? $scheme. '://' . $parsed['host'] . (!empty($parsed['port']) ? ':'.$parsed['port']:'') : '';
-        return  $host . $parsed['path'] . $parsed['query'];
+        $scheme = isset($parsed['scheme']) ? $parsed['scheme'] : 'http';
+        $host = isset($parsed['host']) ? $scheme . '://' . $parsed['host'] . (!empty($parsed['port']) ? ':' . $parsed['port'] : '') : '';
+        return $host . $parsed['path'] . $parsed['query'];
     }
 
 
